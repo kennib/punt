@@ -6,60 +6,6 @@
   </head>
   <style>
 
-  #state1 {
-    fill: lightskyblue;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state2 {
-    fill: greenyellow;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state3 {
-    fill: tomato;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state4 {
-    fill: gold;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state5 {
-    fill: orange;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state6 {
-    fill: gainsboro;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state7 {
-    fill: steelblue;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #state8 {
-    fill: darkseagreen;
-    stroke: black;
-    stroke-width: 1px;
-  }
-
-  #nostate {
-    fill: white;
-    stroke: white;
-    stroke-width: 0px;
-  }
-
   </style>
   <body>
     <script src="d3/d3.v3.js"></script>
@@ -92,10 +38,9 @@ var projection = d3.geo.equirectangular();
 var path = d3.geo.path()
                 .projection(projection);
 
-// Normalize the projection scale
 projection
-  .scale(1)
-  .translate([0, 0]);
+  .scale(786.6128910018631)
+  .translate([-1276.8031942201799, -113.0127958326043]);
 
 var states = {  1 : "NSW",
             2 : "VIC",
@@ -106,106 +51,68 @@ var states = {  1 : "NSW",
             7 : "NT",
             8 : "ACT" }
 
+var color = d3.scale.category20();
+
+var regionUrl = "regions.json";
+
+// FETCH THE REGION INFORMATION
+d3.json(regionUrl, function(err, regionInfo) {
+
+  /** FETCH AND CREATE THE REGION GEOMETRY **/
+
+  var fsdfHost = "http://envirohack.research.nicta.com.au/fsdf/ows";
+  var regionRequest = {
+    "service": "WFS",
+    "request": "GetFeature",
+    "cql_filter": "",
+    "typeName": "fsdf:geometry_abs",
+    "outputFormat": "application/json",
+    "version": "2.0.0",
+    "srsName": "EPSG:4326", // Make sure the coordinates are correct for geoJSON (lng, lat)
+  };
+
+  d3.map(regionInfo).forEach(function(key, val) {
+    // Append the required abs_id to the cql_filter.
+    regionRequest.cql_filter = "";
+    
+    for (var i = regionInfo[key].absIds.length - 1; i >= 0; i--) {
+      regionRequest.cql_filter += "abs_id=" + regionInfo[key].absIds[i] + "+OR+";
+    }
+    // Chop off the last appended " OR "
+    regionRequest.cql_filter = regionRequest.cql_filter.substring(0, regionRequest.cql_filter.length - 4);
+
+    // Fetch the geojson.
+    d3.json(fsdfHost + queryString(regionRequest), function(err, geojson) {
+      svg.append('g').selectAll("path")
+          .data(geojson.features)
+          .enter()
+          .append("svg:path")
+          .attr("fill", color(key))
+          .attr("d", path)
+          .on("click", function(data) {
+            console.log(data.properties.abs_id + ": " + data.properties.STE_NAME11);
+          }).append('title')
+            .text(function() {return regionInfo[key].name;} );
+    });
+  });
 
 
-// Assumptions:
-// {
-//  id : {
-//    name : <name>,
-//    neighbours : [<id>, ...],
-//    state : <state_id>
-//  }
-// }
-var regionInfo = {
-  1 : {
-    name : "Redfern",
-    neighbours : [2, 3],
-    state : 1
-  },
-  2 : {
-    name : "Eveleigh",
-    neighbours : [1],
-    state : 1
-  },
-  3 : {
-    name : "Camperdown",
-    neighbours : [3],
-    state : 1
+  /** CREATE THE REGION OBJECTS FOR GAME MECHANICS **/
+
+  // Used to store the regions using region_id : regionObject format.
+  var regions = {};
+
+  // Go through the received region information, creating regions.
+  for (var key in regionInfo) {
+    regions[key] = new region(key, regionInfo[key].name, regionInfo[key].state);
   }
-}; // Assumed as above.
-
-
-/** FETCH AND CREATE THE REGION GEOMETRY **/
-
-var fsdfHost = "http://envirohack.research.nicta.com.au/fsdf/ows";
-var regionRequest = {
-  "service": "WFS",
-  "request": "GetFeature",
-  "cql_filter": "",
-  "typeName": "fsdf:geometry_abs_simplified",
-  "count": 50,
-  "outputFormat": "application/json",
-  "version": "2.0.0",
-  "srsName": "EPSG:4326", // Make sure the coordinates are correct for geoJSON (lng, lat)
-};
-
-for (var key in regionInfo) {
-  // Append the required abs_id to the cql_filter.
-  regionRequest.cql_filter += "abs_id=" + key + "+OR+";
-}
-
-// Chop off the last appended " OR "
-regionRequest.cql_filter = regionRequest.cql_filter.substring(0, regionRequest.cql_filter.length - 4);
-
-console.log(regionRequest.cql_filter);
-
-// Fetch the geojson.
-d3.json(fsdfHost + queryString(regionRequest), function(err, geojson) {
-  // Scale the projection to the geojson features
-  var b = path.bounds(geojson),
-    s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
-    t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
-
-  projection
-      .scale(s)
-      .translate(t);
-
-  svg.selectAll("path")
-      .data(geojson.features)
-      .enter()
-      .append("svg:path")
-      .attr("id", function(data) {
-        if (data.properties.abs_id) {
-          return "state" + data.properties.abs_id;
-        } else {
-          return "nostate";
-        }
-      })
-      .attr("d", path)
-      .on("click", function(data) {
-        console.log(data.properties.abs_id + ": " + data.properties.STE_NAME11);
-      });
+  // Go through the regions again, adding pointers to neighbouring regions to each regions neighbour list.
+  for (var key in regionInfo) {
+    for (var i = regionInfo[key].neighbours.length - 1; i >= 0; i--) {
+      regions[key].addNeighbour(regions[regionInfo[key].neighbours[i]]);
+    }
+  }
 });
-
-
-/** CREATE THE REGION OBJECTS FOR GAME MECHANICS **/
-
-// Used to store the regions using region_id : regionObject format.
-var regions = {};
-
-// Go through the received region information, creating regions.
-for (var key in regionInfo) {
-  regions[key] = new region(key, regionInfo[key].name, regionInfo[key].state);
-}
-// Go through the regions again, adding pointers to neighbouring regions to each regions neighbour list.
-for (var key in regionInfo) {
-  for (var i = regionInfo[key].neighbours.length - 1; i >= 0; i--) {
-    regions[key].addNeighbour(regions[regionInfo[key].neighbours[i]]);
-  }
-}
-
-console.log(regions);
-
 
 
 // Holds each regions information.
@@ -221,8 +128,6 @@ function region(id, name, state) {
   this.addNeighbour = function(regionObj) {
     this.neighbours.push(regionObj);
   }
-
-
 }
 
 
