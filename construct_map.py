@@ -68,8 +68,13 @@ while boundaries:
 	request = urllib.request.urlopen(url)
 	boundary['neighbours'] = json.loads(request.read().decode('utf-8'))
 
+
+	min_area = AREA_AUS/(NUM_REGIONS/2)
+	max_area = AREA_AUS/(NUM_REGIONS*2)
 	# While the area of the set is less that aprroixmatly the area of australia/40:
-	while region['area'] < AREA_AUS/NUM_REGIONS:
+
+
+	while region['area'] < (AREA_AUS/NUM_REGIONS) and (region['area'] < min_area):
 		# Select an adjacent boundary within same state with the smallest area
 		smallest_boundary, index = None, None
 
@@ -87,7 +92,7 @@ while boundaries:
 					smallest_boundary = neighbour
 
 		# If total area of set + new boundary is < approximately australia_area/40:
-		if smallest_boundary and region['area'] + smallest_boundary['area'] < AREA_AUS/NUM_REGIONS:
+		if smallest_boundary:
 			# Add the new boundary to the set
 			region['boundaries'].append(smallest_boundary)
 			region['area'] += smallest_boundary['area']
