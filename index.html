@@ -51,7 +51,9 @@ var states = {  1 : "NSW",
             7 : "NT",
             8 : "ACT" }
 
-var color = d3.scale.category20();
+var color = d3.scale.category10();
+var shade = d3.map();
+for (var s=0; s<9; s++) shade.set(s, 0);
 
 var regionUrl = "regions.json";
 
@@ -87,10 +89,14 @@ d3.json(regionUrl, function(err, regionInfo) {
           .data(geojson.features)
           .enter()
           .append("svg:path")
-          .attr("fill", color(key))
+          .attr("fill", function() {
+            var k = shade.get(regionInfo[key].state)+0.1;
+            shade.set(regionInfo[key].state, k);
+            return d3.rgb(color(regionInfo[key].state)).brighter(k).toString();
+          })
           .attr("d", path)
           .on("click", function(data) {
-            console.log(data.properties.abs_id + ": " + data.properties.STE_NAME11);
+            console.log(data.properties.abs_id + ": " + regionInfo[key].name);
           }).append('title')
             .text(function() {return regionInfo[key].name;} );
     });
