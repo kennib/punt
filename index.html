@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <meta charset="utf-8">
+      <title>Punt!</title>
+  </head>
+  <style>
+
+  #state1 {
+    fill: lightskyblue;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state2 {
+    fill: greenyellow;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state3 {
+    fill: tomato;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state4 {
+    fill: gold;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state5 {
+    fill: orange;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state6 {
+    fill: gainsboro;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state7 {
+    fill: steelblue;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #state8 {
+    fill: darkseagreen;
+    stroke: black;
+    stroke-width: 1px;
+  }
+
+  #nostate {
+    fill: white;
+    stroke: white;
+    stroke-width: 0px;
+  }
+
+  </style>
+  <body>
+    <script src="d3/d3.v3.js"></script>
+    <script>
+
+/*** HELPER FUNCTIONS ***/
+
+/* A simple function to turn a JSON object into a query string
+   For a more complete function use something like Jquery's $.param() */
+function queryString(obj){
+  var l = [];
+  for(key in obj) {
+    l.push(key + "=" + obj[key]);
+  }
+  return "?" + l.join("&");
+}
+
+
+var currentChild = 0;
+
+var width = 960,
+    height = 500;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var host = "http://envirohack.research.nicta.com.au/admin_bnds_abs/ows";
+var geoRequest = {
+  "service": "WFS",
+  "request": "GetFeature",
+  "bbox": "-43.740509602057614,96.816941408,-9.142175976703609,159.109219008",
+  "typeName": "admin_bnds:STE_2011_AUST",
+  "maxFeatures": 50,
+  "outputFormat": "application/json",
+  "srsName": "EPSG:4326", // Make sure the coordinates are correct for geoJSON (lng, lat)
+};
+
+var geoUrl = "regions.geojson";
+
+var projection = d3.geo.equirectangular();
+
+var path = d3.geo.path()
+                .projection(projection);
+
+// Normalize the projection scale
+projection
+  .scale(1)
+  .translate([0, 0]);
+
+d3.json(geoUrl, function(geojson) {
+      // Scale the projection to the geojson features
+  var b = path.bounds(geojson),
+    s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+    t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+  projection
+      .scale(s)
+      .translate(t);
+
+  svg.selectAll("path")
+      .data(geojson.features)
+      .enter()
+      .append("svg:path")
+      .attr("id", function(data) {
+        if (data.properties.STE_CODE11) {
+          return "state" + data.properties.STE_CODE11;
+        } else {
+          return "nostate";
+        }
+      })
+      .attr("d", path)
+      .on("click", function(data) {
+        console.log(data.properties.STE_CODE11 + ": " + data.properties.STE_NAME11);
+      });
+
+});
+
+states = {  1 : "NSW",
+            2 : "VIC",
+            3 : "QLD",
+            4 : "NT",
+            5 : ""}
+
+
+
+// Assumptions:
+// {
+//   id : <name>,
+//   neighbours : [<id>, ...],
+//   state : <state_id>
+// }
+
+
+
+
+
+    </script>
+  </body>
+</html>

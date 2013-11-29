@@ -1,0 +1,82 @@
+
+body {
+  background-color: #F8F8F8;
+  font-family: 'Verdana', sans-serif;
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1.2em;
+  margin: 15px;
+}
+
+h1, p {
+  color: #333;
+}
+
+#plot {
+  width: 410px;
+  height: 410px;
+  background-color: #ccc;
+ }
+
+#app {
+  width: 1080px;
+  height: 610px;
+  margin: auto;
+}
+
+#form {
+  width: 420px;
+  height: 600px;
+  padding: 5px;
+  border: 5px solid #ccc;
+  background-color: #fff;
+}
+
+#svg {
+  width: 410px;
+  height: 410px;
+}
+
+#container {
+  width: 420px;
+  height: 600px;
+  padding: 5px;
+  float: right;
+  border: 5px solid #ccc;
+  background-color: #fff;
+}
+
+#info {
+  width: 250px;
+  height: 600px;
+  float: right;
+  padding: 5px;
+  border-right-width: 5px;
+  border-top-width: 5px;
+  border-bottom-width: 5px;
+  border-left-width: 0px;
+  border-style: solid;
+  border-color: #ccc;
+  background-color: #fff;
+}
+
+#dataInput {
+  resize: none;
+  overflow: auto;
+}
+
+#downloadButton {
+  visibility: hidden;
+}
+
+#randomInput {
+  visibility: hidden;
+}
+
+#selector {
+  visibility: hidden;
+}
+
+#showLabels {
+  visibility: hidden;
+}
